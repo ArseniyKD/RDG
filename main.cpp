@@ -29,7 +29,7 @@ class riscdotVis : public riscdotBaseVisitor {
 
 riscdotVis::riscdotVis(char *outputFile) {
     funcs = std::set<std::string>();
-    currFunc = "";
+    currFunc = "DEFAULT_NO_ENCLOSING_FUNCTION";
     outStream = std::ofstream(outputFile);
 
     outStream << "digraph G {\n";
