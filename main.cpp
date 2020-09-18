@@ -36,8 +36,9 @@ riscdotVis::riscdotVis(char *outputFile) {
 }
 
 // NEVER DO THIS IN ACTUAL CODE.
-// This can technically throw an error, and if a destructor throws an error,
-// nothing can catch it -> fatal crash through std::exit.
+// This can technically throw an error, and if a destructor throws an error
+// during stack unwinding (processing another error), this will immediately 
+// terminate the program. 
 riscdotVis::~riscdotVis() {
     outStream << "}";
 }
@@ -75,7 +76,8 @@ antlrcpp::Any riscdotVis::visitLblSt(riscdotParser::LblStContext * ctx) {
     return antlrcpp::Any();
 }
 
-// Upon visitin a function call, add 
+// Upon visiting a function call, add the generated edge to the graph, along with
+// the line number as the edge label.
 antlrcpp::Any riscdotVis::visitFuncSt(riscdotParser::FuncStContext * ctx) {
     std::string lbl = visit(ctx->functionCall());
     auto lineNum = ctx->start->getLine();
