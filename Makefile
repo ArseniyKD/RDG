@@ -1,3 +1,6 @@
+# This Makefile was created by Braedy Kuzma for CMPUT 415 at the University
+# of Alberta.
+
 # -----------
 # | This section finds your ANTLR install for linking and including.
 # -----------
