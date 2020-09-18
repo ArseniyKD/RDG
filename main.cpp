@@ -88,7 +88,6 @@ int main( int argc, char **argv ) {
         std::cout << "Need an input file and an output file." << std::endl;
         return 1;
     }
-    std::cout << argc << std::endl;
 
     antlr4::ANTLRFileStream afs(argv[1]);
     riscdotLexer lexer(&afs);
