@@ -18,10 +18,19 @@ functionCall: 'jal' 'ra,' LABEL;
 // Lexer rule for recognizing labels.
 LABEL: [a-zA-Z] ([a-zA-Z0-9])*;
 
-// Lexer rules for ignoring comments and strings as we should never parse 
-// anything within strings or comments.
+// Lexer rule to ignore comments. Comments are single line only.
 COMMENT: '#' ~[\r\n]* -> skip;
-STRING: '"' .*? '"' -> skip;
+
+// This set of lexer rules will handle strings with string escapes.
+// Without this structure, a string like this <"\"jal ra, function\""> would go
+// through and affect the program output, which is a bug. Similarly, we want
+// to make sure to parse <"\\"> correctly, since the slashes are not used to
+// escape the quote, but rather to escape the backslash. This solution was 
+// proposed by Pierre Hebert, and adapted slightly. 
+ESC_BACKSLASH: '\\\\';
+ESC_DOUBLEQUOTE: '\\"';
+DOUBLEQUOTE: '"';
+STRING: DOUBLEQUOTE ( ESC_BACKSLASH | ESC_DOUBLEQUOTE | . )*? DOUBLEQUOTE -> skip;
 
 // Typical lexer rule to ignore 
 WS: [ \t\r\n] -> skip;
