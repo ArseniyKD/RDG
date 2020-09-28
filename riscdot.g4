@@ -7,6 +7,14 @@ statements: (.*? statement)* .*? EOF;
 // This is what is used to generate the dot graph. 
 statement: LABEL':' #lblSt
     | functionCall #funcSt
+    | stackManip #spSt 
+    ;
+
+// This rule is used to be able to tell what sort of stack manipulation 
+// operation was used to add the right annotations to the function nodes.
+stackManip: 'lw' LABEL (',')? INT? '(' SP ')' #loadFromSP
+    | 'sw' LABEL (',')? INT? '(' SP ')' #storeToSP
+    | 'addi' SP (',')? SP (',')? INT #moveSP
     ;
 
 // functionCalls is used in the first pass of the compiler to grab all the 
@@ -15,8 +23,15 @@ statement: LABEL':' #lblSt
 functionCalls: (.*? functionCall)* .*? EOF;
 functionCall: 'jal' 'ra,' LABEL;
 
+
+// Lexer rule to handle the stack pointer to generate the right annotations
+// to the function nodes in the resulting dot graph.
+SP: 'sp';
+
 // Lexer rule for recognizing labels.
 LABEL: [a-zA-Z] ([a-zA-Z0-9])*;
+
+INT: ('-')? ([0-9])+;
 
 // Lexer rule to ignore comments. Comments are single line only.
 COMMENT: '#' ~[\r\n]* -> skip;

@@ -7,7 +7,7 @@
 #include "riscdotBaseVisitor.h"
 #include <iostream>
 #include <cstdlib>
-#include <set>
+#include <unordered_map>
 #include <string>
 
 #include "support/Any.h"
@@ -21,16 +21,24 @@ class riscdotVis : public riscdotBaseVisitor {
         antlrcpp::Any visitStatements(riscdotParser::StatementsContext * ctx) override;
         antlrcpp::Any visitLblSt(riscdotParser::LblStContext * ctx) override;
         antlrcpp::Any visitFuncSt(riscdotParser::FuncStContext * ctx) override;
+        antlrcpp::Any visitSpSt(riscdotParser::SpStContext * ctx) override;
+        antlrcpp::Any visitLoadFromSP(riscdotParser::LoadFromSPContext * ctx) override;
+        antlrcpp::Any visitStoreToSP(riscdotParser::StoreToSPContext * ctx) override;
+        antlrcpp::Any visitMoveSP(riscdotParser::MoveSPContext * ctx) override;
+        std::string generateNodes();
     private:
-        std::set<std::string> funcs;
+        std::unordered_map<std::string, std::string> funcs;
         std::string currFunc; 
         std::ofstream outStream; 
+        std::string outStr;
 };
 
 riscdotVis::riscdotVis(char *outputFile) {
-    funcs = std::set<std::string>();
+    funcs = std::unordered_map<std::string, std::string>();
+    funcs["main"] = "";
     currFunc = "DEFAULT_NO_ENCLOSING_FUNCTION";
     outStream = std::ofstream(outputFile);
+    outStr = "";
 
     outStream << "digraph G {\n";
 }
@@ -53,7 +61,7 @@ antlrcpp::Any riscdotVis::visitFunctionCall(riscdotParser::FunctionCallContext *
 antlrcpp::Any riscdotVis::visitFunctionCalls(riscdotParser::FunctionCallsContext * ctx) {
     for( auto funcCall : ctx->functionCall() ) {
         std::string lbl = visit(funcCall);
-        funcs.insert(lbl);
+        funcs[lbl] = "";
     }
     return antlrcpp::Any(); 
 }
@@ -63,6 +71,8 @@ antlrcpp::Any riscdotVis::visitStatements(riscdotParser::StatementsContext * ctx
     for( auto st : ctx->statement()) {
         visit(st);
     }
+    // First output the function node definitions, and then add all the edges.
+    outStream << generateNodes() << outStr; 
     return antlrcpp::Any();
 }
 
@@ -81,9 +91,50 @@ antlrcpp::Any riscdotVis::visitLblSt(riscdotParser::LblStContext * ctx) {
 antlrcpp::Any riscdotVis::visitFuncSt(riscdotParser::FuncStContext * ctx) {
     std::string lbl = visit(ctx->functionCall());
     auto lineNum = ctx->start->getLine();
-    outStream << '\t' << currFunc << " -> " << lbl << " [ label=\"" << lineNum << "\" ];\n";
+    outStr += "\t" + currFunc + " -> " + lbl + " [ label=\"" + std::to_string(lineNum) + "\" ];\n";
     return antlrcpp::Any();
 }
+
+// In order to add all the stack manipulation code to the annotation of each 
+// function node, you first need to figure out what sort of stack manipulation
+// operation it is.
+antlrcpp::Any riscdotVis::visitSpSt(riscdotParser::SpStContext * ctx) {
+    visit( ctx->stackManip() );
+    return antlrcpp::Any();
+}
+
+
+// If the stack manipulation operation is a load from the stack, then we add 
+// the lw annotation to the function.
+antlrcpp::Any riscdotVis::visitLoadFromSP(riscdotParser::LoadFromSPContext * ctx) {
+    funcs[currFunc] += "lw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(sp)\\n";
+    return antlrcpp::Any();
+}
+
+// If the stack manipulation operation is a store to the stack, then we add the
+// sw annotation to the function.
+antlrcpp::Any riscdotVis::visitStoreToSP(riscdotParser::StoreToSPContext * ctx) {
+    funcs[currFunc] += "sw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(sp)\\n";
+    return antlrcpp::Any();
+}
+
+// If the stack manipulation operation is a movement of the stack pointer, then
+// we add the addi annotation to the function.
+antlrcpp::Any riscdotVis::visitMoveSP(riscdotParser::MoveSPContext * ctx) {
+    funcs[currFunc] += "addi  sp, sp, " + ctx->INT()->getText() + "\\n";
+    return antlrcpp::Any();
+}
+
+// Just before we emplace all the edges into the graph, we need to create all
+// the function nodes and add the necessary annotations to the function node.
+std::string riscdotVis::generateNodes() {
+    std::string out = "";
+    for( auto& it: funcs ) {
+        out += "\t" + it.first + " [ shape=box,label=\"" + it.first + "\\n\\n" + it.second + "\"];\n";
+    }
+    return out;
+}
+
 
 int main( int argc, char **argv ) {
     if ( argc < 3 ) {
