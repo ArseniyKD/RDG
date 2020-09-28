@@ -26,7 +26,8 @@ functionCall: 'jal' 'ra,' LABEL;
 
 // Lexer rule to handle the stack pointer to generate the right annotations
 // to the function nodes in the resulting dot graph.
-SP: 'sp';
+// Ordering of the lexer rules is important.
+SP: ('sp' | 'fp' );
 
 // Lexer rule for recognizing labels.
 LABEL: [a-zA-Z] ([a-zA-Z0-9])*;

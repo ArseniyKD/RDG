@@ -107,21 +107,21 @@ antlrcpp::Any riscdotVis::visitSpSt(riscdotParser::SpStContext * ctx) {
 // If the stack manipulation operation is a load from the stack, then we add 
 // the lw annotation to the function.
 antlrcpp::Any riscdotVis::visitLoadFromSP(riscdotParser::LoadFromSPContext * ctx) {
-    funcs[currFunc] += "lw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(sp)\\n";
+    funcs[currFunc] += "lw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(" + ctx->SP()->getText() + ")\\n";
     return antlrcpp::Any();
 }
 
 // If the stack manipulation operation is a store to the stack, then we add the
 // sw annotation to the function.
 antlrcpp::Any riscdotVis::visitStoreToSP(riscdotParser::StoreToSPContext * ctx) {
-    funcs[currFunc] += "sw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(sp)\\n";
+    funcs[currFunc] += "sw     " + ctx->LABEL()->getText() + ", " + ctx->INT()->getText() + "(" + ctx->SP()->getText() + ")\\n";
     return antlrcpp::Any();
 }
 
 // If the stack manipulation operation is a movement of the stack pointer, then
 // we add the addi annotation to the function.
 antlrcpp::Any riscdotVis::visitMoveSP(riscdotParser::MoveSPContext * ctx) {
-    funcs[currFunc] += "addi  sp, sp, " + ctx->INT()->getText() + "\\n";
+    funcs[currFunc] += "addi  " + ctx->SP(0)->getText() + ", " + ctx->SP(1)->getText() + ", " + ctx->INT()->getText() + "\\n";
     return antlrcpp::Any();
 }
 
